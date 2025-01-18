@@ -61,11 +61,11 @@
         ],
         "pint": "./vendor/bin/pint",
         "pint-v": "./vendor/bin/pint -v",
-        "pint-test" : "./vendor/bin/pint --test",
-        "pint-diff" : "./vendor/bin/pint --diff=master",
-        "pint-fix" : "./vendor/bin/pint --fix",
-        "pint-dirty" : "./vendor/bin/pint --dirty",
-        "pint-repair" : "./vendor/bin/pint --repair"
+        "pint-test": "./vendor/bin/pint --test",
+        "pint-diff": "./vendor/bin/pint --diff=master",
+        "pint-fix": "./vendor/bin/pint --fix",
+        "pint-dirty": "./vendor/bin/pint --dirty",
+        "pint-repair": "./vendor/bin/pint --repair"
     },
     "extra": {
         "laravel": {
