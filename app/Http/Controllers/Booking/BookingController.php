@@ -3,25 +3,21 @@
 namespace App\Http\Controllers\Booking;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Booking\SearchRequest;
 use App\Models\RoomType;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class BookingController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         return Inertia::render('Booking/Index');
     }
 
-    public function search(Request $request)
+    public function search(SearchRequest $request): JsonResponse
     {
-        $request->validate([
-            'check_in' => 'required|date|after:today',
-            'check_out' => 'required|date|after:check_in',
-            'guests' => 'required|integer|min:1|max:6',
-        ]);
-
         $roomTypes = RoomType::with('amenities')
             ->where('capacity', '>=', $request->guests)
             ->whereHas('rooms', function ($query) use ($request) {

@@ -61,8 +61,9 @@ const Index: React.FC = () => {
                 setShowResults(true);
             })
             .catch((error) => {
-                console.error(error);
                 setLoading(false);
+                setShowResults(false);
+                console.error(error);
             });
     };
 

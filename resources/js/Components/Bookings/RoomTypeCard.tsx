@@ -1,7 +1,7 @@
 import { RoomTypeCardProps } from '@/types';
 
 export default function RoomTypeCard(props: RoomTypeCardProps) {
-    const roomType = props.roomType;
+    const { roomType } = props;
     return (
         <>
             <div className="mb-4 flex items-start justify-between">
