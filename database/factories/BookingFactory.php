@@ -21,7 +21,7 @@ class BookingFactory extends Factory
     {
         $checkIn = Carbon::now()->addDays(fake()->numberBetween(1, 60));
         $checkOut = $checkIn->copy()->addDays(fake()->numberBetween(1, 7));
-        $roomType = RoomType::factory()->create();
+        $roomType = RoomType::intRandomOrder()->first() ?? RoomType::factory()->create();
 
         return [
             'room_type_id' => $roomType->id,

@@ -8,14 +8,18 @@ use Illuminate\Database\Seeder;
 
 class RoomSeeder extends Seeder
 {
+    private const TOTAL_FLOORS = 10;
+
+    private const TOTAL_ROOMS_PER_FLOOR = 6;
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
         $roomTypes = RoomType::all();
-        $floors = 5; // 10 floors
-        $roomsPerFloor = 5; // 6 rooms per floor
+        $floors = self::TOTAL_FLOORS;
+        $roomsPerFloor = self::TOTAL_ROOMS_PER_FLOOR;
 
         for ($floor = 1; $floor <= $floors; $floor++) {
             for ($room = 1; $room <= $roomsPerFloor; $room++) {
