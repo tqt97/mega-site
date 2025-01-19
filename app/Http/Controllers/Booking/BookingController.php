@@ -9,9 +9,8 @@ use Inertia\Inertia;
 
 class BookingController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-
         return Inertia::render('Booking/Index');
     }
 
