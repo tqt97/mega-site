@@ -44,3 +44,35 @@ export interface LayoutProviderProps {
     initialSettings?: Setting | null;
     children: ReactNode;
 }
+
+export interface Amenity {
+    id: number;
+    name: string;
+    created_at: string;
+    updated_at: string;
+    pivot: {
+        room_type_id: number;
+        amenity_id: number;
+    };
+}
+
+export interface RoomType {
+    id: number;
+    name: string;
+    description: string;
+    price_per_night: number;
+    thumbnailUrl: string;
+    size: number;
+    capacity: number;
+    amenities: Amenity[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SearchResults {
+    roomTypes: RoomType[];
+}
+
+export interface RoomTypeCardProps {
+    roomType: RoomType;
+}

@@ -29,4 +29,5 @@ require __DIR__.'/auth.php';
 
 Route::prefix('bookings')->group(function () {
     Route::get('/', [BookingController::class, 'index'])->name('bookings.index');
+    Route::post('/rooms/search', [BookingController::class, 'search'])->name('bookings.search');
 });
