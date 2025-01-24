@@ -1,7 +1,14 @@
-import { RoomTypeCardProps } from '@/types';
+import { RoomType } from '@/types';
 
-export default function RoomTypeCard(props: RoomTypeCardProps) {
-    const { roomType } = props;
+interface RoomTypeCardPropsWithModal {
+    roomType: RoomType;
+    onBookNow: (roomTypeId: number) => void; // Callback để hiển thị modal
+}
+export default function RoomTypeCard({
+    roomType,
+    onBookNow,
+}: RoomTypeCardPropsWithModal) {
+    // const { roomType } = props;
     return (
         <>
             <div className="mb-4 flex items-start justify-between">
@@ -14,7 +21,7 @@ export default function RoomTypeCard(props: RoomTypeCardProps) {
             </div>
 
             <div className="mb-4">
-                <h4 className="mb-2 text-sm font-medium text-gray-700">
+                <h4 className="mb-2 mt-2 text-sm font-medium text-gray-700">
                     Room Details:
                 </h4>
                 <div className="mb-3 flex gap-4 text-sm text-gray-600">
@@ -40,13 +47,17 @@ export default function RoomTypeCard(props: RoomTypeCardProps) {
             </div>
 
             <p className="mb-4 text-gray-600">{roomType.description}</p>
-
-            <a
-                href=""
+            <hr />
+            <h2 className="text-md mb-2 mt-4 font-medium text-gray-700">
+                {/* Available Rooms: {roomType.rooms.length}{' '}
+                {roomType.rooms.length === 1 ? 'room' : 'rooms'} */}
+            </h2>
+            <button
+                onClick={() => onBookNow(roomType.id)}
                 className="block w-full rounded-md bg-indigo-600 px-4 py-2 text-center text-white transition duration-150 ease-in-out hover:bg-indigo-700"
             >
                 Book Now
-            </a>
+            </button>
         </>
     );
 }
