@@ -8,7 +8,6 @@ use App\Http\Requests\CreateBookingRequest;
 use App\Http\Requests\StoreBookingRequest;
 use App\Models\Booking;
 use App\Models\Customer;
-use App\Models\Room;
 use App\Models\RoomType;
 use App\Services\Bookings\PricingService;
 use Illuminate\Http\JsonResponse;
@@ -34,10 +33,10 @@ class BookingController extends Controller
     {
         $roomTypes = RoomType::with([
             'amenities:id,name',
-            'rooms' => fn($query) => $query->availableBetween($request->check_in, $request->check_out),
+            'rooms' => fn ($query) => $query->availableBetween($request->check_in, $request->check_out),
         ])
             ->where('capacity', '>=', $request->guests)
-            ->whereHas('rooms', fn($query) => $query->availableBetween($request->check_in, $request->check_out))
+            ->whereHas('rooms', fn ($query) => $query->availableBetween($request->check_in, $request->check_out))
             ->orderBy('price_per_night')
             ->select('id', 'name', 'capacity', 'price_per_night', 'size', 'description')
             ->get();
@@ -47,9 +46,6 @@ class BookingController extends Controller
 
     /**
      * Create a new booking.
-     *
-     * @param  \App\Http\Requests\CreateBookingRequest  $request
-     * @return \Illuminate\Http\JsonResponse
      */
     public function create(CreateBookingRequest $request): JsonResponse
     {
@@ -117,9 +113,7 @@ class BookingController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return back()->withErrors([
-                'error' => 'An error occurred while processing your booking. Please try again.',
-            ])->withInput();
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 }

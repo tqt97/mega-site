@@ -9,7 +9,9 @@ export default function FlashMessage({ message, type }: FlashMessageProps) {
         return () => clearTimeout(timer);
     }, []);
 
-    if (!message || !visible) return null;
+    if (!message || !visible) {
+        return null;
+    }
 
     const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
     const textColor = 'text-white';

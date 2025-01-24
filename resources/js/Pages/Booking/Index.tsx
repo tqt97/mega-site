@@ -155,6 +155,16 @@ export default function Index() {
                 }, 3000);
             })
             .catch((error) => {
+                setIsModalOpen(false);
+                resetBookingFormData();
+                setBookingData(null);
+                resetSearchData();
+                setSearchResults(null);
+                setShowResults(false);
+                setFlashMessage('Booking failed.');
+                setTimeout(() => {
+                    setFlashMessage(null);
+                }, 3000);
                 console.error(error);
             });
     };
