@@ -8,7 +8,7 @@ interface ModalProps {
 }
 
 export default function Modal({ show, onClose, title, children }: ModalProps) {
-    if (!show) return null; // Nếu modal không mở thì không hiển thị
+    if (!show) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-600 bg-opacity-50">
