@@ -65,6 +65,7 @@ export interface RoomType {
     size: number;
     capacity: number;
     amenities: Amenity[];
+    rooms: Room[];
     created_at: string;
     updated_at: string;
 }
@@ -75,4 +76,25 @@ export interface SearchResults {
 
 export interface RoomTypeCardProps {
     roomType: RoomType;
+}
+
+export interface Pricing {
+    nights: number;
+    price_per_night: string;
+    total_price: number;
+}
+
+export interface BookingData {
+    room_type_id: number;
+    check_in: string;
+    check_out: string;
+    guests: number;
+    pricing: Pricing;
+    roomType: RoomType;
+    rooms: Room[];
+}
+
+export interface FlashMessageProps {
+    message: string | null;
+    type: 'success' | 'error';
 }
