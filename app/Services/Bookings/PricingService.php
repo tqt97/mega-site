@@ -12,14 +12,23 @@ class PricingService
      */
     public function calculateBookingPrice(RoomType $roomType, string $checkIn, string $checkOut): array
     {
-        $checkInDate = Carbon::parse($checkIn);
-        $checkOutDate = Carbon::parse($checkOut);
+        try {
+            $checkInDate = Carbon::parse($checkIn);
+            $checkOutDate = Carbon::parse($checkOut);
+        } catch (\Exception $e) {
+            throw new \InvalidArgumentException('Invalid date format provided.');
+        }
 
         if ($checkInDate > $checkOutDate) {
             throw new \InvalidArgumentException('Check-in date must be before check-out date.');
         }
 
-        $nights = $checkInDate->diffInDays($checkOutDate);
+        if (!is_numeric($roomType->price_per_night) || $roomType->price_per_night <= 0) {
+            throw new \InvalidArgumentException('Room type price must be a positive number.');
+        }
+
+        // Calculate the number of nights - minimum of 1
+        $nights = max($checkInDate->diffInDays($checkOutDate), 1);
         $totalPrice = $roomType->price_per_night * $nights;
 
         return [
