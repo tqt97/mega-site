@@ -5,9 +5,9 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import Loading from '@/icons';
 import BookingLayout from '@/Layouts/BookingLayout';
+import { createBooking, searchAvailableRooms, storeBooking } from '@/services';
 import { BookingData, SearchResults } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
-import axios from 'axios';
 import { FormEventHandler, useState } from 'react';
 export default function Index() {
     const options = [
@@ -21,7 +21,7 @@ export default function Index() {
     const [searchResults, setSearchResults] = useState<SearchResults | null>(
         null,
     );
-    const [loading, setLoading] = useState(false); // State to track loading
+    const [loading, setLoading] = useState(false);
     const [showResults, setShowResults] = useState(false);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,15 +67,41 @@ export default function Index() {
         email: '',
         room_id: null,
     });
-    // Search for available room types
-    const handleSubmit: FormEventHandler = (e) => {
-        e.preventDefault();
 
-        // Validate dates
-        const checkInDate = new Date(searchData.check_in);
-        const checkOutDate = new Date(searchData.check_out);
+    const resetState = () => {
+        setIsModalOpen(false);
+        resetBookingFormData();
+        resetSearchData();
+        setBookingData(null);
+        setSearchResults(null);
+        setShowResults(false);
+    };
+
+    const validateSearchData = (data: {
+        check_in: string;
+        check_out: string;
+        guests: number;
+    }) => {
+        const errors = {} as { check_out?: string; guests?: string };
+        const checkInDate = new Date(data.check_in);
+        const checkOutDate = new Date(data.check_out);
 
         if (checkOutDate <= checkInDate) {
+            errors.check_out = 'Check-out date must be after check-in date';
+        }
+
+        if (!data.guests || data.guests <= 0) {
+            errors.guests = 'Number of guests must be greater than 0';
+        }
+
+        return errors;
+    };
+    // Search for available room types
+    const handleSubmit: FormEventHandler = async (e) => {
+        e.preventDefault();
+
+        const validationErrors = validateSearchData(searchData);
+        if (Object.keys(validationErrors).length > 0) {
             errors.check_out = 'Check-out date must be after check-in date';
             return;
         }
@@ -84,55 +110,43 @@ export default function Index() {
         setLoading(true);
 
         // Call the API to search for available room types
-        axios
-            .post(route('bookings.search'), searchData)
-            .then((response) => {
-                setSearchResults(response.data);
-                setLoading(false);
-                setShowResults(true);
-            })
-            .catch((error) => {
-                setLoading(false);
-                setShowResults(false);
-                console.error(error);
-            });
+        try {
+            const response = await searchAvailableRooms(searchData);
+            setSearchResults(response.data);
+            setShowResults(true);
+        } catch (error) {
+            setFlashMessage('Failed to search for rooms.');
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Create
-    const handleBookNow = (roomTypeId: number) => {
+    const handleBookNow = async (roomTypeId: number) => {
         setBookingFormData((prevData) => ({
             ...prevData,
             room_type_id: roomTypeId,
         }));
         // call api to get pricing
-        axios
-            .post(route('bookings.create'), {
+        try {
+            const response = await createBooking({
                 room_type_id: roomTypeId,
                 check_in: searchData.check_in,
                 check_out: searchData.check_out,
                 guests: searchData.guests,
-            })
-            .then((response) => {
-                setBookingData(response.data);
-                setBookingFormData((prevData) => ({
-                    ...prevData,
-                    room_id: response.data.rooms[0].id,
-                }));
-                setIsModalOpen(true);
-            })
-            .catch((error) => {
-                setFlashMessage('Booking failed.');
-                setTimeout(() => {
-                    setFlashMessage(null);
-                }, 3000);
-                setIsModalOpen(false);
-                resetBookingFormData();
-                setBookingData(null);
-                resetSearchData();
-                setSearchResults(null);
-                setShowResults(false);
-                console.error(error);
             });
+            setBookingData(response.data);
+            setBookingFormData((prevData) => ({
+                ...prevData,
+                room_id: response.data.rooms[0]?.id || null,
+            }));
+            setIsModalOpen(true);
+        } catch (error) {
+            setFlashMessage('Booking failed.');
+            console.error(error);
+            resetState();
+        }
     };
 
     const closeModal = () => {
@@ -140,7 +154,7 @@ export default function Index() {
     };
 
     // Store
-    const handleBooking: FormEventHandler = (e) => {
+    const handleBooking: FormEventHandler = async (e) => {
         e.preventDefault();
         if (!bookingFormData.name || !bookingFormData.email) {
             alert('Please enter your name and email');
@@ -150,33 +164,22 @@ export default function Index() {
             return;
         }
 
-        axios
-            .post(route('bookings.store'), bookingFormData)
-            .then(() => {
-                setIsModalOpen(false);
-                resetBookingFormData();
-                setBookingData(null);
-                resetSearchData();
-                setSearchResults(null);
-                setShowResults(false);
-                setFlashMessage('Booking successful!');
-                setTimeout(() => {
-                    setFlashMessage(null);
-                }, 3000);
-            })
-            .catch((error) => {
-                setIsModalOpen(false);
-                resetBookingFormData();
-                setBookingData(null);
-                resetSearchData();
-                setSearchResults(null);
-                setShowResults(false);
-                setFlashMessage('Booking failed.');
-                setTimeout(() => {
-                    setFlashMessage(null);
-                }, 3000);
-                console.error(error);
-            });
+        setLoading(true);
+
+        try {
+            await storeBooking(bookingFormData);
+            setFlashMessage('Booking successful!');
+            setTimeout(() => {
+                setFlashMessage(null);
+            }, 3000);
+            resetState();
+        } catch (error) {
+            setFlashMessage('Booking failed.');
+            console.error(error);
+            resetState();
+        } finally {
+            setLoading(false);
+        }
     };
     return (
         <BookingLayout>
@@ -384,8 +387,8 @@ export default function Index() {
                                 </h3>
                                 <div className="space-y-1 text-gray-600">
                                     <p>
-                                        {bookingData.pricing?.nights}{' '}
-                                        {bookingData.pricing?.nights > 1
+                                        {bookingData?.pricing?.nights}{' '}
+                                        {bookingData?.pricing?.nights > 1
                                             ? 'nights'
                                             : 'night'}
                                     </p>

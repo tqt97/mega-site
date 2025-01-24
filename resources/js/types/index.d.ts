@@ -98,3 +98,26 @@ export interface FlashMessageProps {
     message: string | null;
     type: 'success' | 'error';
 }
+
+export interface CreateBookingData {
+    room_type_id: number;
+    check_in: string;
+    check_out: string;
+    guests: number;
+}
+
+export interface SearchData {
+    check_in: string;
+    check_out: string;
+    guests: number;
+}
+
+export interface BookingFormData {
+    room_type_id: number | null;
+    check_in: string;
+    check_out: string;
+    guests: number;
+    name: string;
+    email: string;
+    room_id: number | null;
+}

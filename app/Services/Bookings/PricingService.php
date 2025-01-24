@@ -23,7 +23,7 @@ class PricingService
             throw new \InvalidArgumentException('Check-in date must be before check-out date.');
         }
 
-        if (!is_numeric($roomType->price_per_night) || $roomType->price_per_night <= 0) {
+        if (! is_numeric($roomType->price_per_night) || $roomType->price_per_night <= 0) {
             throw new \InvalidArgumentException('Room type price must be a positive number.');
         }
 
