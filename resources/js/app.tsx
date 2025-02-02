@@ -4,6 +4,7 @@ import './bootstrap';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot, hydrateRoot } from 'react-dom/client';
+import { LayoutProvider } from './contexts/LayoutContext';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -15,12 +16,19 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
+        const { user } = props.initialPage.props.auth;
+        const { settings } = props.initialPage.props;
+        const app = (
+            <LayoutProvider initialUser={user} initialSettings={settings}>
+                <App {...props} />
+            </LayoutProvider>
+        );
         if (import.meta.env.SSR) {
-            hydrateRoot(el, <App {...props} />);
+            hydrateRoot(el, app);
             return;
         }
 
-        createRoot(el).render(<App {...props} />);
+        createRoot(el).render(app);
     },
     progress: {
         color: '#4B5563',
