@@ -10,6 +10,8 @@ class Setting extends Model
 {
     use HasFactory;
 
+    public const VERSION = '1.0';
+
     protected $fillable = [
         'name',
         'email',
@@ -19,8 +21,6 @@ class Setting extends Model
         'instagram_url',
         'twitter_url',
     ];
-
-    public const VERSION = '1.0';
 
     // protected static function booted()
     // {

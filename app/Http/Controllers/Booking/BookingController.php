@@ -9,6 +9,7 @@ use App\Http\Requests\StoreBookingRequest;
 use App\Models\Customer;
 use App\Models\RoomType;
 use App\Services\Bookings\PricingService;
+use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,7 @@ use Inertia\Response;
 class BookingController extends Controller
 {
     public function __construct(
-        private PricingService $pricingService
+        private readonly PricingService $pricingService
     ) {}
 
     public function index(): Response
@@ -49,7 +50,7 @@ class BookingController extends Controller
             }
 
             return response()->json(['roomTypes' => $roomTypes]);
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return response()->json(['message' => 'An error occurred while processing your request'], 500);
         }
     }
@@ -86,7 +87,7 @@ class BookingController extends Controller
                 'pricing' => $pricing,
                 'rooms' => $rooms,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'An error occurred while processing your request',
                 'errors' => $e->getMessage(),
@@ -147,7 +148,7 @@ class BookingController extends Controller
             DB::rollBack();
 
             return response()->json(['success' => false, 'message' => 'Database error: '.$e->getMessage()]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
 
             return response()->json(['success' => false, 'message' => 'An error occurred: '.$e->getMessage()]);

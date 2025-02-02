@@ -59,8 +59,8 @@ class RoomType extends Model
      */
     public function availableRooms(?string $checkIn = null, ?string $checkOut = null): HasMany
     {
-        $checkIn = $checkIn ?? now()->toDateString();
-        $checkOut = $checkOut ?? now()->toDateString();
+        $checkIn ??= now()->toDateString();
+        $checkOut ??= now()->toDateString();
 
         return $this->hasMany(Room::class)->availableBetween($checkIn, $checkOut);
     }
