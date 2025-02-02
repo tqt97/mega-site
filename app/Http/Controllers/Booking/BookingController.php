@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Booking\SearchRequest;
 use App\Http\Requests\CreateBookingRequest;
 use App\Http\Requests\StoreBookingRequest;
-use App\Models\Booking;
 use App\Models\Customer;
 use App\Models\RoomType;
 use App\Services\Bookings\PricingService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,17 +32,25 @@ class BookingController extends Controller
      */
     public function search(SearchRequest $request): JsonResponse
     {
-        $roomTypes = RoomType::with([
-            'amenities:id,name',
-            'rooms' => fn ($query) => $query->availableBetween($request->check_in, $request->check_out),
-        ])
-            ->where('capacity', '>=', $request->guests)
-            ->whereHas('rooms', fn ($query) => $query->availableBetween($request->check_in, $request->check_out))
-            ->orderBy('price_per_night')
-            ->select('id', 'name', 'capacity', 'price_per_night', 'size', 'description')
-            ->get();
+        try {
+            $roomTypes = RoomType::with([
+                'amenities:id,name',
+                'rooms' => fn ($query) => $query->availableBetween($request->check_in, $request->check_out),
+            ])
+                ->where('capacity', '>=', $request->guests)
+                ->whereHas('rooms', fn ($query) => $query->availableBetween($request->check_in, $request->check_out))
+                ->orderBy('price_per_night')
+                ->select('id', 'name', 'capacity', 'price_per_night', 'size', 'description')
+                ->get();
 
-        return response()->json(['roomTypes' => $roomTypes]);
+            if ($roomTypes->isEmpty()) {
+                return response()->json(['message' => 'No room types available for the given criteria', 'roomTypes' => []]);
+            }
+
+            return response()->json(['roomTypes' => $roomTypes]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'An error occurred while processing your request'], 500);
+        }
     }
 
     /**
@@ -49,28 +58,39 @@ class BookingController extends Controller
      */
     public function create(CreateBookingRequest $request): JsonResponse
     {
-        $roomType = RoomType::findOrFail($request->room_type_id);
-        $rooms = $roomType->rooms()->availableBetween($request->check_in, $request->check_out)
-            ->select('id', 'floor', 'room_number')
-            ->groupBy('floor', 'room_number')
-            ->orderBy('floor')
-            ->orderBy('room_number')
-            ->get();
+        try {
+            $roomType = RoomType::findOrFail($request->room_type_id);
+            $rooms = $roomType->rooms()->availableBetween($request->check_in, $request->check_out)
+                ->select('id', 'floor', 'room_number')
+                ->groupBy('floor', 'room_number')
+                ->orderBy('floor')
+                ->orderBy('room_number')
+                ->get();
 
-        $pricing = $this->pricingService->calculateBookingPrice(
-            $roomType,
-            $request->check_in,
-            $request->check_out
-        );
+            if ($rooms->isEmpty()) {
+                return response()->json(['message' => 'No rooms available for the given dates', 'rooms' => []]);
+            }
 
-        return response()->json([
-            'roomType' => $roomType,
-            'check_in' => $request->check_in,
-            'check_out' => $request->check_out,
-            'guests' => $request->guests,
-            'pricing' => $pricing,
-            'rooms' => $rooms,
-        ]);
+            $pricing = $this->pricingService->calculateBookingPrice(
+                $roomType,
+                $request->check_in,
+                $request->check_out
+            );
+
+            return response()->json([
+                'roomType' => $roomType,
+                'check_in' => $request->check_in,
+                'check_out' => $request->check_out,
+                'guests' => $request->guests,
+                'pricing' => $pricing,
+                'rooms' => $rooms,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while processing your request',
+                'errors' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -118,10 +138,18 @@ class BookingController extends Controller
             DB::commit();
 
             return response()->json(['success' => true, 'message' => 'Booking created successfully.']);
+        } catch (ValidationException $e) {
+            DB::rollBack();
+
+            return response()->json(['success' => false, 'message' => 'Validation error: '.$e->getMessage()]);
+        } catch (QueryException $e) {
+            DB::rollBack();
+
+            return response()->json(['success' => false, 'message' => 'Database error: '.$e->getMessage()]);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred: '.$e->getMessage()]);
         }
     }
 }
