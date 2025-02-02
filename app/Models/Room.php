@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -52,7 +53,7 @@ class Room extends Model
      *
      * @param  array  $bookingData  Additional booking data.
      *
-     * @throws \Exception If the room is no longer available
+     * @throws Exception If the room is no longer available
      */
     public function safelyBook(array $bookingData): Booking
     {
@@ -68,7 +69,7 @@ class Room extends Model
                 ->exists();
 
             if (! $isRoomAvailable) {
-                throw new \Exception('Room is no longer available for the selected dates.');
+                throw new Exception('Room is no longer available for the selected dates.');
             }
 
             return $this->bookings()->create($bookingData);
