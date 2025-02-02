@@ -19,8 +19,7 @@ class GuestCapacityRule implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $capacity = RoomType::where($this->room_type_id)->value('capacity');
-
+        $capacity = RoomType::where('id', $this->room_type_id)->value('capacity');
         if ($capacity !== null && $value > $capacity) {
             $fail('The selected room type does not have enough capacity.')->translate();
         }

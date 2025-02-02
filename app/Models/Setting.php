@@ -22,10 +22,10 @@ class Setting extends Model
 
     public const VERSION = '1.0';
 
-    protected static function booted()
-    {
-        static::saved(function () {
-            Cache::tags(['settings'])->flush();
-        });
-    }
+    // protected static function booted()
+    // {
+    //     static::saved(function () {
+    //         Cache::tags(['settings'])->flush();
+    //     });
+    // }
 }
