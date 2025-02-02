@@ -9,6 +9,7 @@ use App\Http\Requests\StoreBookingRequest;
 use App\Models\Customer;
 use App\Models\RoomType;
 use App\Services\Bookings\PricingService;
+use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,7 @@ use Inertia\Response;
 class BookingController extends Controller
 {
     public function __construct(
-        private PricingService $pricingService
+        private readonly PricingService $pricingService
     ) {}
 
     public function index(): Response
@@ -35,7 +36,6 @@ class BookingController extends Controller
         try {
             $roomTypes = RoomType::with([
                 'amenities:id,name',
-                // 'amenities' => fn ($query) => $query->select('id', 'name'),
                 'rooms' => fn ($query) => $query->availableBetween($request->check_in, $request->check_out)
                     ->select('id', 'floor', 'room_number', 'room_type_id', 'is_available'),
             ])
@@ -50,7 +50,11 @@ class BookingController extends Controller
             }
 
             return response()->json(['roomTypes' => $roomTypes]);
-        } catch (\Exception $e) {
+        } catch (QueryException $e) {
+            report($e);
+
+            return response()->json(['message' => 'Database query error'], 500);
+        } catch (Exception) {
             return response()->json(['message' => 'An error occurred while processing your request'], 500);
         }
     }
@@ -87,7 +91,7 @@ class BookingController extends Controller
                 'pricing' => $pricing,
                 'rooms' => $rooms,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'An error occurred while processing your request',
                 'errors' => $e->getMessage(),
@@ -148,7 +152,7 @@ class BookingController extends Controller
             DB::rollBack();
 
             return response()->json(['success' => false, 'message' => 'Database error: '.$e->getMessage()]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
 
             return response()->json(['success' => false, 'message' => 'An error occurred: '.$e->getMessage()]);
