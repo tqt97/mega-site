@@ -39,13 +39,13 @@ class Room extends Model
     {
         return $query
             // Use lockForUpdate() to prevent concurrent modifications while checking availability
-            ->lockForUpdate()
             ->where('is_available', true)
             // Exclude rooms that have bookings overlapping with the given dates
             ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
                 $query->where('check_in', '<', $checkOut)
                     ->where('check_out', '>', $checkIn);
-            });
+            })
+            ->lockForUpdate();
     }
 
     /**
@@ -61,18 +61,22 @@ class Room extends Model
             // Lock only this specific room row
             $isRoomAvailable = $this->newQuery()
                 ->where('id', $this->id)
-                ->lockForUpdate()
                 ->availableBetween(
                     $bookingData['check_in'],
                     $bookingData['check_out']
                 )
+                ->lockForUpdate()
                 ->exists();
 
             if (! $isRoomAvailable) {
                 throw new Exception('Room is no longer available for the selected dates.');
             }
+            $booking = $this->bookings()->create($bookingData);
+            if (! $booking) {
+                throw new Exception('Failed to create booking.');
+            }
 
-            return $this->bookings()->create($bookingData);
+            return $booking;
         });
     }
 

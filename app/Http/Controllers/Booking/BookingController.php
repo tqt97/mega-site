@@ -50,6 +50,10 @@ class BookingController extends Controller
             }
 
             return response()->json(['roomTypes' => $roomTypes]);
+        } catch (QueryException $e) {
+            report($e);
+
+            return response()->json(['message' => 'Database query error'], 500);
         } catch (Exception) {
             return response()->json(['message' => 'An error occurred while processing your request'], 500);
         }
