@@ -35,7 +35,8 @@ class BookingController extends Controller
         try {
             $roomTypes = RoomType::with([
                 'amenities:id,name',
-                'rooms' => fn ($query) => $query->availableBetween($request->check_in, $request->check_out),
+                'rooms' => fn ($query) => $query->availableBetween($request->check_in, $request->check_out)
+                    ->select('id', 'floor', 'room_number', 'room_type_id', 'is_available'),
             ])
                 ->where('capacity', '>=', $request->guests)
                 ->whereHas('rooms', fn ($query) => $query->availableBetween($request->check_in, $request->check_out))

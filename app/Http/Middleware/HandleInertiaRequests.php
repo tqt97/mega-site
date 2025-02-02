@@ -41,7 +41,7 @@ class HandleInertiaRequests extends Middleware
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
-            'settings' => Cache::remember('settings', 3600, function () {
+            'settings' => Cache::remember('settings', 36000, function () {
                 return Setting::first();
             }),
         ];
