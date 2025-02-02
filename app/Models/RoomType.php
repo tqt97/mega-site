@@ -19,6 +19,29 @@ class RoomType extends Model
         'size',
     ];
 
+    public function scopeWithAvailableRooms($query)
+    {
+        return $query->with(['rooms' => function ($query) {
+            $query->whereDoesntHave('bookings', function ($query) {
+                $query->where(function ($query) {
+                    $query->where('check_in', '<=', now())
+                        ->where('check_out', '>=', now());
+                });
+            });
+        }]);
+    }
+
+    public function availableRooms(): HasMany
+    {
+        return $this->rooms()
+            ->whereDoesntHave('bookings', function ($query) {
+                $query->where(function ($query) {
+                    $query->where('check_in', '<=', now())
+                        ->where('check_out', '>=', now());
+                });
+            });
+    }
+
     public function rooms(): HasMany
     {
         return $this->hasMany(Room::class);

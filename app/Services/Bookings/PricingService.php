@@ -35,8 +35,8 @@ class PricingService
 
         return [
             'nights' => $nights,
-            'price_per_night' => number_format((float) $roomType->price_per_night, 2, '.', ''),
-            'total_price' => number_format((float) $totalPrice, 2, '.', ''),
+            'price_per_night' => bcadd($roomType->price_per_night, '0', 2),
+            'total_price' => bcadd($totalPrice, '0', 2),
         ];
     }
 }

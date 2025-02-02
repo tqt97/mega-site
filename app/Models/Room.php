@@ -57,13 +57,17 @@ class Room extends Model
     public function safelyBook(array $bookingData): Booking
     {
         return DB::transaction(function () use ($bookingData) {
-            // Recheck availability within transaction
-            $isAvailable = $this->newQuery()
+            // Lock only this specific room row
+            $isRoomAvailable = $this->newQuery()
                 ->where('id', $this->id)
-                ->availableBetween($bookingData['check_in'], $bookingData['check_out'])
+                ->lockForUpdate()
+                ->availableBetween(
+                    $bookingData['check_in'],
+                    $bookingData['check_out']
+                )
                 ->exists();
 
-            if (! $isAvailable) {
+            if (! $isRoomAvailable) {
                 throw new \Exception('Room is no longer available for the selected dates.');
             }
 
