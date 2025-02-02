@@ -1,1 +1,3 @@
-Thank you for considering contributing to project! The contribution guide same and can be found in the [Laravel documentation](https://laravel.com/docs/11.x/contributions).
+## Code of Conduct
+
+All members must behave professionally, respect each other and adhere to confidentiality principles. Inappropriate behavior will not be tolerated.
