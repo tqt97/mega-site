@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
 
@@ -39,6 +41,9 @@ class HandleInertiaRequests extends Middleware
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
+            'settings' => Cache::remember('settings', 36000, function () {
+                return Setting::first();
+            }),
         ];
     }
 }
