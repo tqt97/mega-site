@@ -71,8 +71,12 @@ class Room extends Model
             if (! $isRoomAvailable) {
                 throw new Exception('Room is no longer available for the selected dates.');
             }
+            $booking = $this->bookings()->create($bookingData);
+            if (! $booking) {
+                throw new Exception('Failed to create booking.');
+            }
 
-            return $this->bookings()->create($bookingData);
+            return $booking;
         });
     }
 
