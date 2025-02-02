@@ -35,6 +35,7 @@ class BookingController extends Controller
         try {
             $roomTypes = RoomType::with([
                 'amenities:id,name',
+                // 'amenities' => fn ($query) => $query->select('id', 'name'),
                 'rooms' => fn ($query) => $query->availableBetween($request->check_in, $request->check_out)
                     ->select('id', 'floor', 'room_number', 'room_type_id', 'is_available'),
             ])
@@ -61,7 +62,7 @@ class BookingController extends Controller
     {
         try {
             $roomType = RoomType::findOrFail($request->room_type_id);
-            $rooms = $roomType->rooms()->availableBetween($request->check_in, $request->check_out)
+            $rooms = $roomType->availableRooms($request->check_in, $request->check_out)
                 ->select('id', 'floor', 'room_number')
                 ->groupBy('floor', 'room_number')
                 ->orderBy('floor')
@@ -104,7 +105,7 @@ class BookingController extends Controller
     {
         $roomType = RoomType::findOrFail($request->room_type_id);
 
-        $room = $roomType->rooms()->availableBetween($request->check_in, $request->check_out)
+        $room = $roomType->availableRooms($request->check_in, $request->check_out)
             ->where('id', $request->room_id)
             ->first();
 

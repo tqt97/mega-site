@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -41,24 +42,11 @@ class RoomType extends Model
      * @param  Builder  $query  The query builder instance.
      * @param  string|null  $checkIn  The check-in date.
      * @param  string|null  $checkOut  The check-out date.
-     * @return Builder The updated query builder instance.
      */
-    public function scopeWithAvailableRooms($query, $checkIn = null, $checkOut = null)
+    public function scopeWithAvailableRooms(Builder $query, ?string $checkIn = null, ?string $checkOut = null): Builder
     {
         return $query->with(['rooms' => function ($query) use ($checkIn, $checkOut) {
-            // Exclude rooms that have bookings overlapping with the given dates
-            $query->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
-                $query->where(function ($query) use ($checkIn, $checkOut) {
-                    // Check if existing bookings overlap with the desired check-in/check-out range
-                    $query->whereBetween('check_in', [$checkIn ?? now(), $checkOut ?? now()])
-                        ->orWhereBetween('check_out', [$checkIn ?? now(), $checkOut ?? now()])
-                        ->orWhere(function ($query) use ($checkIn, $checkOut) {
-                            // Ensure no booking exists completely encompassing the desired range
-                            $query->where('check_in', '<=', $checkIn ?? now())
-                                ->where('check_out', '>=', $checkOut ?? now());
-                        });
-                });
-            });
+            $query->availableBetween($checkIn, $checkOut);
         }]);
     }
 
@@ -66,28 +54,14 @@ class RoomType extends Model
      * Retrieve a list of available rooms for the specified date range.
      * If no dates are provided, it defaults to the current date.
      *
-     * @param  string|null  $checkIn  The check-in date.
-     * @param  string|null  $checkOut  The check-out date.
-     * @return HasMany The relationship query builder for available rooms.
+     * @param  string|null  $checkIn  The check-in date. Defaults to the current date if not provided.
+     * @param  string|null  $checkOut  The check-out date. Defaults to the current date if not provided.
      */
-    public function availableRooms($checkIn = null, $checkOut = null): HasMany
+    public function availableRooms(?string $checkIn = null, ?string $checkOut = null): HasMany
     {
-        return $this->hasMany(Room::class)
-            // Filter out rooms that have overlapping bookings with the provided dates
-            ->whereDoesntHave(
-                'bookings',
-                function ($query) use ($checkIn, $checkOut) {
-                    $query->where(function ($query) use ($checkIn, $checkOut) {
-                        // Check if existing bookings overlap with the desired check-in/check-out range
-                        $query->whereBetween('check_in', [$checkIn ?? now(), $checkOut ?? now()])
-                            ->orWhereBetween('check_out', [$checkIn ?? now(), $checkOut ?? now()])
-                            ->orWhere(function ($query) use ($checkIn, $checkOut) {
-                                // Ensure no booking exists completely encompassing the desired range
-                                $query->where('check_in', '<=', $checkIn ?? now())
-                                    ->where('check_out', '>=', $checkOut ?? now());
-                            });
-                    });
-                }
-            )->where('is_available', true);
+        $checkIn = $checkIn ?? now()->toDateString();
+        $checkOut = $checkOut ?? now()->toDateString();
+
+        return $this->hasMany(Room::class)->availableBetween($checkIn, $checkOut);
     }
 }
