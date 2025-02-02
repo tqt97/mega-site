@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Booking\BookingController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -25,3 +26,10 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+Route::prefix('bookings')->group(function () {
+    Route::get('/', [BookingController::class, 'index'])->name('bookings.index');
+    Route::post('/rooms/search', [BookingController::class, 'search'])->name('bookings.search');
+    Route::post('/booking/create', [BookingController::class, 'create'])->name('bookings.create');
+    Route::post('/booking', [BookingController::class, 'store'])->name('bookings.store');
+});
