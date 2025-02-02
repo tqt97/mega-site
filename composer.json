@@ -18,6 +18,7 @@
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.14",
+        "driftingly/rector-laravel": "^2.0",
         "fakerphp/faker": "^1.23",
         "laravel/breeze": "^2.3",
         "laravel/pail": "^1.1",
@@ -26,7 +27,9 @@
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.1",
         "pestphp/pest": "^3.7",
-        "pestphp/pest-plugin-laravel": "^3.0"
+        "pestphp/pest-plugin-laravel": "^3.0",
+        "rector/rector": "^2.0",
+        "tightenco/duster": "^3.1"
     },
     "autoload": {
         "psr-4": {
@@ -66,7 +69,11 @@
         "pint-diff": "./vendor/bin/pint --diff=master",
         "pint-fix": "./vendor/bin/pint --fix",
         "pint-dirty": "./vendor/bin/pint --dirty",
-        "pint-repair": "./vendor/bin/pint --repair"
+        "pint-repair": "./vendor/bin/pint --repair",
+        "duster-lint": "./vendor/bin/duster lint",
+        "duster-fix": "./vendor/bin/duster fix",
+        "rector-dry": "./vendor/bin/rector --dry-run",
+        "rector": "./vendor/bin/rector"
     },
     "extra": {
         "laravel": {
