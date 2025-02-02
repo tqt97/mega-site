@@ -8,6 +8,7 @@ import BookingLayout from '@/Layouts/BookingLayout';
 import { createBooking, searchAvailableRooms, storeBooking } from '@/services';
 import { BookingData, SearchResults } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
+import axios from 'axios';
 import { FormEventHandler, useState } from 'react';
 export default function Index() {
     const options = [
@@ -143,8 +144,32 @@ export default function Index() {
             }));
             setIsModalOpen(true);
         } catch (error) {
-            setFlashMessage('Booking failed.');
             console.error(error);
+            if (axios.isAxiosError(error) && error.response) {
+                const errorData = error.response.data;
+
+                // Handle validation errors
+                if (error.response.status === 422 && errorData.errors) {
+                    const validationMessage = Object.values(errorData.errors)
+                        .flat()
+                        .join(' ');
+                    setFlashMessage(`Validation error: ${validationMessage}`);
+                }
+                // Handle specific error messages from the server
+                else if (errorData.message) {
+                    setFlashMessage(errorData.message);
+                }
+                // Handle other HTTP errors
+                else {
+                    setFlashMessage(
+                        `Booking failed: ${error.response.statusText}`,
+                    );
+                }
+            } else {
+                setFlashMessage(
+                    'Unable to complete booking. Please try again later.',
+                );
+            }
             resetState();
         }
     };
@@ -181,6 +206,7 @@ export default function Index() {
             setLoading(false);
         }
     };
+
     return (
         <BookingLayout>
             <>
@@ -417,7 +443,6 @@ export default function Index() {
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-gray-600">
                                         <span>
-                                            $
                                             {
                                                 bookingData.pricing
                                                     ?.price_per_night
@@ -426,13 +451,13 @@ export default function Index() {
                                             nights
                                         </span>
                                         <span>
-                                            ${bookingData.pricing.total_price}
+                                            {bookingData.pricing.total_price}
                                         </span>
                                     </div>
                                     <div className="flex justify-between border-t border-indigo-100 pt-2 text-lg font-semibold">
                                         <span>Total (USD)</span>
                                         <span>
-                                            ${bookingData.pricing.total_price}
+                                            {bookingData.pricing.total_price}
                                         </span>
                                     </div>
                                     <p className="mt-2 text-sm text-gray-500">

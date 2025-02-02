@@ -29,12 +29,14 @@ class PricingService
 
         // Calculate the number of nights - minimum of 1
         $nights = max($checkInDate->diffInDays($checkOutDate), 1);
-        $totalPrice = $roomType->price_per_night * $nights;
+
+        // Use BC Math for precise decimal calculation with 2 decimal places
+        $totalPrice = bcmul((string) $roomType->price_per_night, (string) $nights, 2);
 
         return [
             'nights' => $nights,
-            'price_per_night' => $roomType->price_per_night,
-            'total_price' => $totalPrice,
+            'price_per_night' => number_format((float) $roomType->price_per_night, 2, '.', ''),
+            'total_price' => number_format((float) $totalPrice, 2, '.', ''),
         ];
     }
 }

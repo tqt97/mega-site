@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Room extends Model
 {
@@ -36,12 +37,38 @@ class Room extends Model
     public function scopeAvailableBetween(Builder $query, string $checkIn, string $checkOut): Builder
     {
         return $query
+            // Use lockForUpdate() to prevent concurrent modifications while checking availability
+            ->lockForUpdate()
             ->where('is_available', true)
             // Exclude rooms that have bookings overlapping with the given dates
             ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
                 $query->where('check_in', '<', $checkOut)
                     ->where('check_out', '>', $checkIn);
             });
+    }
+
+    /**
+     * Safely book a room using database transactions to prevent race conditions.
+     *
+     * @param  array  $bookingData  Additional booking data.
+     *
+     * @throws \Exception If the room is no longer available
+     */
+    public function safelyBook(array $bookingData): Booking
+    {
+        return DB::transaction(function () use ($bookingData) {
+            // Recheck availability within transaction
+            $isAvailable = $this->newQuery()
+                ->where('id', $this->id)
+                ->availableBetween($bookingData['check_in'], $bookingData['check_out'])
+                ->exists();
+
+            if (! $isAvailable) {
+                throw new \Exception('Room is no longer available for the selected dates.');
+            }
+
+            return $this->bookings()->create($bookingData);
+        });
     }
 
     public function roomType(): BelongsTo

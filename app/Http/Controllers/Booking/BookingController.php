@@ -83,6 +83,14 @@ class BookingController extends Controller
     {
         $roomType = RoomType::findOrFail($request->room_type_id);
 
+        $room = $roomType->rooms()->availableBetween($request->check_in, $request->check_out)
+            ->where('id', $request->room_id)
+            ->first();
+
+        if (! $room) {
+            return response()->json(['success' => false, 'message' => 'Room is no longer available for the selected dates.']);
+        }
+
         $pricing = $this->pricingService->calculateBookingPrice(
             $roomType,
             $request->check_in,
@@ -97,7 +105,7 @@ class BookingController extends Controller
                 ['name' => $request->name]
             );
 
-            Booking::create([
+            $room->safelyBook([
                 'room_type_id' => $request->room_type_id,
                 'room_id' => $request->room_id,
                 'customer_id' => $customer->id,
@@ -109,7 +117,7 @@ class BookingController extends Controller
 
             DB::commit();
 
-            return response()->json(['success' => true]);
+            return response()->json(['success' => true, 'message' => 'Booking created successfully.']);
         } catch (\Exception $e) {
             DB::rollBack();
 
