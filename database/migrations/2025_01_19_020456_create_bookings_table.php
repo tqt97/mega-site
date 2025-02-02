@@ -21,6 +21,13 @@ return new class extends Migration
             $table->date('check_out');
             $table->decimal('total_price', 10, 2);
             $table->timestamps();
+
+            // Index the check_in and check_out columns
+            $table->index('check_in');
+            $table->index('check_out');
+
+            // Index the check_in and check_out columns together
+            $table->index(['check_in', 'check_out']);
         });
     }
 
