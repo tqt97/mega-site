@@ -4,6 +4,8 @@ namespace App\Services\Bookings;
 
 use App\Models\RoomType;
 use Carbon\Carbon;
+use Exception;
+use InvalidArgumentException;
 
 class PricingService
 {
@@ -15,16 +17,16 @@ class PricingService
         try {
             $checkInDate = Carbon::parse($checkIn);
             $checkOutDate = Carbon::parse($checkOut);
-        } catch (\Exception $e) {
-            throw new \InvalidArgumentException('Invalid date format provided.');
+        } catch (Exception) {
+            throw new InvalidArgumentException('Invalid date format provided.');
         }
 
         if ($checkInDate > $checkOutDate) {
-            throw new \InvalidArgumentException('Check-in date must be before check-out date.');
+            throw new InvalidArgumentException('Check-in date must be before check-out date.');
         }
 
         if (! is_numeric($roomType->price_per_night) || $roomType->price_per_night <= 0) {
-            throw new \InvalidArgumentException('Room type price must be a positive number.');
+            throw new InvalidArgumentException('Room type price must be a positive number.');
         }
 
         // Calculate the number of nights - minimum of 1

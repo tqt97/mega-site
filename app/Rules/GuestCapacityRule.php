@@ -9,13 +9,13 @@ use Illuminate\Contracts\Validation\ValidationRule;
 class GuestCapacityRule implements ValidationRule
 {
     public function __construct(
-        private int $room_type_id
+        private readonly int $room_type_id
     ) {}
 
     /**
      * Run the validation rule.
      *
-     * @param  \Closure(string, ?string=): \Illuminate\Translation\PotentiallyTranslatedString  $fail
+     * @param  Closure(string, ?string=): \Illuminate\Translation\PotentiallyTranslatedString  $fail
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
