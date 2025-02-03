@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Booking\SearchRequest;
 use App\Http\Requests\CreateBookingRequest;
 use App\Http\Requests\StoreBookingRequest;
+use App\Models\Booking;
 use App\Models\Customer;
 use App\Models\RoomType;
 use App\Services\Bookings\PricingService;
@@ -35,14 +36,14 @@ class BookingController extends Controller
     {
         try {
             $roomTypes = RoomType::with([
-                'amenities:id,name',
+                'amenities' => fn ($query) => $query->select('amenities.id', 'amenities.name'),
                 'rooms' => fn ($query) => $query->availableBetween($request->check_in, $request->check_out)
-                    ->select('id', 'floor', 'room_number', 'room_type_id', 'is_available'),
+                    ->select('rooms.id', 'rooms.floor', 'rooms.room_number', 'rooms.room_type_id', 'rooms.is_available'),
             ])
                 ->where('capacity', '>=', $request->guests)
                 ->whereHas('rooms', fn ($query) => $query->availableBetween($request->check_in, $request->check_out))
                 ->orderBy('price_per_night')
-                ->select('id', 'name', 'capacity', 'price_per_night', 'size', 'description')
+                ->select('room_types.id', 'name', 'capacity', 'price_per_night', 'size', 'description')
                 ->get();
 
             if ($roomTypes->isEmpty()) {
@@ -52,9 +53,12 @@ class BookingController extends Controller
             return response()->json(['roomTypes' => $roomTypes]);
         } catch (QueryException $e) {
             report($e);
+            logger()->error('Database query error during room search', ['exception' => $e->getMessage(), 'query' => $e->getSql(), 'bindings' => $e->getBindings()]);
 
-            return response()->json(['message' => 'Database query error'], 500);
-        } catch (Exception) {
+            return response()->json(['message' => 'An error occurred while processing your request'], 500);
+        } catch (Exception $e) {
+            logger()->error('Unexpected error during room search', ['exception' => $e->getMessage()]);
+
             return response()->json(['message' => 'An error occurred while processing your request'], 500);
         }
     }
@@ -111,27 +115,28 @@ class BookingController extends Controller
 
         $room = $roomType->availableRooms($request->check_in, $request->check_out)
             ->where('id', $request->room_id)
+            ->lockForUpdate()
             ->first();
 
         if (! $room) {
             return response()->json(['success' => false, 'message' => 'Room is no longer available for the selected dates.']);
         }
 
-        $pricing = $this->pricingService->calculateBookingPrice(
-            $roomType,
-            $request->check_in,
-            $request->check_out
-        );
-
         try {
             DB::beginTransaction();
 
-            $customer = Customer::firstOrCreate(
-                ['email' => $request->email],
-                ['name' => $request->name]
+            $pricing = $this->pricingService->calculateBookingPrice(
+                $roomType,
+                $request->check_in,
+                $request->check_out
             );
 
-            $room->safelyBook([
+            $customer = Customer::firstOrCreate([
+                'name' => $request->name,
+                'email' => $request->email,
+            ]);
+
+            $booking = $room->bookings()->create([
                 'room_type_id' => $request->room_type_id,
                 'room_id' => $request->room_id,
                 'customer_id' => $customer->id,
@@ -140,6 +145,18 @@ class BookingController extends Controller
                 'check_out' => $request->check_out,
                 'total_price' => $pricing['total_price'],
             ]);
+            if (! $booking) {
+                DB::rollBack();
+
+                return response()->json(['success' => false, 'message' => 'Failed to create booking.']);
+            }
+
+            $roomUpdated = $room->update(['is_available' => false]); // Capture update success
+            if (! $roomUpdated) {
+                DB::rollBack(); // Rollback if room update fails
+
+                return response()->json(['success' => false, 'message' => 'Failed to update room availability.']);
+            }
 
             DB::commit();
 
