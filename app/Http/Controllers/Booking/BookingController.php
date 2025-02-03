@@ -35,14 +35,14 @@ class BookingController extends Controller
     {
         try {
             $roomTypes = RoomType::with([
-                'amenities:id,name',
+                'amenities' => fn ($query) => $query->select('amenities.id', 'amenities.name'),
                 'rooms' => fn ($query) => $query->availableBetween($request->check_in, $request->check_out)
-                    ->select('id', 'floor', 'room_number', 'room_type_id', 'is_available'),
+                    ->select('rooms.id', 'rooms.floor', 'rooms.room_number', 'rooms.room_type_id', 'rooms.is_available'),
             ])
                 ->where('capacity', '>=', $request->guests)
                 ->whereHas('rooms', fn ($query) => $query->availableBetween($request->check_in, $request->check_out))
                 ->orderBy('price_per_night')
-                ->select('id', 'name', 'capacity', 'price_per_night', 'size', 'description')
+                ->select('room_types.id', 'name', 'capacity', 'price_per_night', 'size', 'description')
                 ->get();
 
             if ($roomTypes->isEmpty()) {
@@ -53,7 +53,7 @@ class BookingController extends Controller
         } catch (QueryException $e) {
             report($e);
 
-            return response()->json(['message' => 'Database query error'], 500);
+            return response()->json(['message' => 'An error occurred while processing your request'], 500);
         } catch (Exception) {
             return response()->json(['message' => 'An error occurred while processing your request'], 500);
         }
@@ -127,8 +127,8 @@ class BookingController extends Controller
             DB::beginTransaction();
 
             $customer = Customer::firstOrCreate(
-                ['email' => $request->email],
-                ['name' => $request->name]
+                ['email' => filter_var($request->email, FILTER_SANITIZE_EMAIL)],
+                ['name' => htmlspecialchars($request->name)],
             );
 
             $room->safelyBook([

@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\DB;
 
 class Room extends Model
 {
@@ -44,8 +43,8 @@ class Room extends Model
             ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
                 $query->where('check_in', '<', $checkOut)
                     ->where('check_out', '>', $checkIn);
-            })
-            ->lockForUpdate();
+            });
+        // ->lockForUpdate();
     }
 
     /**
@@ -57,27 +56,26 @@ class Room extends Model
      */
     public function safelyBook(array $bookingData): Booking
     {
-        return DB::transaction(function () use ($bookingData) {
-            // Lock only this specific room row
-            $isRoomAvailable = $this->newQuery()
-                ->where('id', $this->id)
-                ->availableBetween(
-                    $bookingData['check_in'],
-                    $bookingData['check_out']
-                )
-                ->lockForUpdate()
-                ->exists();
+        // Lock only this specific room row
+        $lockedRoom = self::where('id', $this->id)
+            ->lockForUpdate()
+            ->first();
 
-            if (! $isRoomAvailable) {
-                throw new Exception('Room is no longer available for the selected dates.');
-            }
-            $booking = $this->bookings()->create($bookingData);
-            if (! $booking) {
-                throw new Exception('Failed to create booking.');
-            }
+        $isAvailable = $lockedRoom->availableBetween($bookingData['check_in'], $bookingData['check_out'])
+            ->exists();
 
-            return $booking;
-        });
+        if (! $isAvailable) {
+            throw new Exception('Room is no longer available for the selected dates.');
+        }
+
+        $booking = $this->bookings()->create($bookingData);
+        if (! $booking) {
+            throw new Exception('Failed to create booking.');
+        }
+
+        $lockedRoom->update(['is_available', false]);
+
+        return $booking;
     }
 
     public function roomType(): BelongsTo
