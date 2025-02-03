@@ -20,9 +20,15 @@ class TransactionRetry
         // return $next($request);
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
-                return DB::transaction(fn () => $next($request));
+                return DB::transaction(function () use ($request, $next, $attempt) {
+                    logger()->debug("Transaction attempt: {$attempt}", ['url' => $request->fullUrl()]);
+
+                    return $next($request);
+                });
             } catch (DeadlockException $e) {
+                logger()->warning("Deadlock Exception on attempt {$attempt}", ['url' => $request->fullUrl(), 'exception' => $e->getMessage()]);
                 if ($attempt >= $maxAttempts) {
+                    logger()->error("Transaction failed after {$maxAttempts} attempts due to deadlock", ['url' => $request->fullUrl(), 'exception' => $e->getMessage()]);
                     throw $e;
                 }
                 usleep(rand(100, 500));

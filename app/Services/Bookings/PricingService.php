@@ -15,7 +15,8 @@ class PricingService
      */
     public function calculateBookingPrice(RoomType $roomType, string $checkIn, string $checkOut): array
     {
-        $cacheKey = md5("pricing_{$roomType->id}_{$checkIn}_{$checkOut}");
+        // $cacheKey = md5("pricing_{$roomType->id}_{$checkIn}_{$checkOut}");
+        $cacheKey = "pricing:room:{$roomType->id}:dates:{$checkIn}-{$checkOut}";
 
         // if (cache()->has($cacheKey)) {
         //     return cache()->get($cacheKey);

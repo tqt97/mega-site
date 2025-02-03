@@ -126,10 +126,10 @@ class BookingController extends Controller
         try {
             DB::beginTransaction();
 
-            $customer = Customer::firstOrCreate(
-                ['email' => filter_var($request->email, FILTER_SANITIZE_EMAIL)],
-                ['name' => htmlspecialchars($request->name)],
-            );
+            $customer = Customer::firstOrCreate([
+                'name' => $request->name,
+                'email' => $request->email,
+            ]);
 
             $room->safelyBook([
                 'room_type_id' => $request->room_type_id,
@@ -140,6 +140,8 @@ class BookingController extends Controller
                 'check_out' => $request->check_out,
                 'total_price' => $pricing['total_price'],
             ]);
+
+            $room->update(['is_available' => false]);
 
             DB::commit();
 

@@ -73,8 +73,6 @@ class Room extends Model
             throw new Exception('Failed to create booking.');
         }
 
-        $lockedRoom->update(['is_available', false]);
-
         return $booking;
     }
 
