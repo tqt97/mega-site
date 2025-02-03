@@ -133,6 +133,8 @@ class BookingController extends Controller
                 'email' => $request->email,
             ]);
 
+            $room->update(['is_available' => false]);
+
             $booking = $room->bookings()->create([
                 'room_type_id' => $request->room_type_id,
                 'room_id' => $request->room_id,
@@ -143,10 +145,10 @@ class BookingController extends Controller
                 'total_price' => $pricing['total_price'],
             ]);
             if (! $booking) {
+                DB::rollBack();
+
                 return response()->json(['success' => false, 'message' => 'Failed to create booking.']);
             }
-
-            $room->update(['is_available' => false]);
 
             DB::commit();
 

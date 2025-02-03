@@ -15,12 +15,7 @@ class PricingService
      */
     public function calculateBookingPrice(RoomType $roomType, string $checkIn, string $checkOut): array
     {
-        // $cacheKey = md5("pricing_{$roomType->id}_{$checkIn}_{$checkOut}");
         $cacheKey = "pricing:room:{$roomType->id}:dates:{$checkIn}-{$checkOut}";
-
-        // if (cache()->has($cacheKey)) {
-        //     return cache()->get($cacheKey);
-        // }
 
         return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($roomType, $checkIn, $checkOut) {
             try {
@@ -49,6 +44,6 @@ class PricingService
                 'price_per_night' => bcadd($roomType->price_per_night, '0', 2),
                 'total_price' => bcadd($totalPrice, '0', 2),
             ];
-        });
+        }, $roomType); // Add RoomType model to cache tags
     }
 }
