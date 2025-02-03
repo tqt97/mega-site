@@ -31,7 +31,11 @@ class TransactionRetry
                     logger()->error("Transaction failed after {$maxAttempts} attempts due to deadlock", ['url' => $request->fullUrl(), 'exception' => $e->getMessage()]);
                     throw $e;
                 }
-                usleep(rand(100, 500));
+                // Exponential backoff with jitter: (2^attempt * 100ms) + random(50ms)
+                $baseDelay = pow(2, $attempt - 1) * 100;
+                $jitter = rand(0, 50);
+                $delayMs = $baseDelay + $jitter;
+                usleep($delayMs * 1000); // Convert ms to microseconds
             }
         }
     }
