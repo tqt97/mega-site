@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Booking\SearchRequest;
 use App\Http\Requests\CreateBookingRequest;
 use App\Http\Requests\StoreBookingRequest;
+use App\Models\Booking;
 use App\Models\Customer;
 use App\Models\RoomType;
 use App\Services\Bookings\PricingService;
@@ -111,6 +112,7 @@ class BookingController extends Controller
 
         $room = $roomType->availableRooms($request->check_in, $request->check_out)
             ->where('id', $request->room_id)
+            ->lockForUpdate()
             ->first();
 
         if (! $room) {
@@ -131,7 +133,7 @@ class BookingController extends Controller
                 'email' => $request->email,
             ]);
 
-            $room->safelyBook([
+            $booking = $room->bookings()->create([
                 'room_type_id' => $request->room_type_id,
                 'room_id' => $request->room_id,
                 'customer_id' => $customer->id,
@@ -140,6 +142,9 @@ class BookingController extends Controller
                 'check_out' => $request->check_out,
                 'total_price' => $pricing['total_price'],
             ]);
+            if (! $booking) {
+                return response()->json(['success' => false, 'message' => 'Failed to create booking.']);
+            }
 
             $room->update(['is_available' => false]);
 

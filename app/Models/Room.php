@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -44,36 +43,6 @@ class Room extends Model
                 $query->where('check_in', '<', $checkOut)
                     ->where('check_out', '>', $checkIn);
             });
-        // ->lockForUpdate();
-    }
-
-    /**
-     * Safely book a room using database transactions to prevent race conditions.
-     *
-     * @param  array  $bookingData  Additional booking data.
-     *
-     * @throws Exception If the room is no longer available
-     */
-    public function safelyBook(array $bookingData): Booking
-    {
-        // Lock only this specific room row
-        $lockedRoom = self::where('id', $this->id)
-            ->lockForUpdate()
-            ->first();
-
-        $isAvailable = $lockedRoom->availableBetween($bookingData['check_in'], $bookingData['check_out'])
-            ->exists();
-
-        if (! $isAvailable) {
-            throw new Exception('Room is no longer available for the selected dates.');
-        }
-
-        $booking = $this->bookings()->create($bookingData);
-        if (! $booking) {
-            throw new Exception('Failed to create booking.');
-        }
-
-        return $booking;
     }
 
     public function roomType(): BelongsTo
