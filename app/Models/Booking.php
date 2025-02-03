@@ -10,6 +10,8 @@ class Booking extends Model
 {
     use HasFactory;
 
+    public const MAX_DAYS_ALLOWED = 30;
+
     protected $fillable = [
         'room_type_id',
         'room_id',

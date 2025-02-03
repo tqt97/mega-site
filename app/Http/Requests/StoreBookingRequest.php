@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Booking;
 use App\Rules\GuestCapacityRule;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
@@ -31,8 +32,8 @@ class StoreBookingRequest extends FormRequest
                 'date',
                 'after:check_in',
                 function ($attribute, $value, $fail) {
-                    if (Carbon::parse($value)->diffInDays($this->check_in) > 10) {
-                        $fail('Maximum booking duration is 10 days');
+                    if (Carbon::parse($value)->diffInDays($this->check_in) > Booking::MAX_DAYS_ALLOWED) {
+                        $fail('The check-out date must be at most '.Booking::MAX_DAYS_ALLOWED.' days after the check-in date.');
                     }
                 },
             ],
